@@ -1,9 +1,12 @@
+import time
 import cv2
 import mss
 import numpy as np
 from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
 from colorama import Fore, Style
 from ultralytics import YOLO
+import pyautogui
+import pygetwindow as gw
 
 WINDOWS_TITLE = "Ryujinx  1.1.0-macos1 - 塞尔达传说 王国之泪 v1.0.0 (0100F2C0115B6000) (64-bit)"
 BEST_PATH = "/Users/chenyang/Developer/PycharmProjects/zelda-yolo/detect/train/weights/best.pt"
@@ -52,14 +55,39 @@ def show_window(window_title):
             img_brg = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
             res = model.predict(source=img_brg, conf=MODEL_THRESHOLD)
+            r = res[0]
 
-            res_plotted = res[0].plot()
+            res_plotted = r.plot()
 
             if SIGHTING_IS_VISIBLE:
                 image_height, image_width, _ = res_plotted.shape
-                center_x = image_width // 2
-                center_y = image_height // 2 + SIGHTING_Y_OFFSET
+                center_x = int(image_width // 2)
+                center_y = int(image_height // 2 + SIGHTING_Y_OFFSET)
                 cv2.circle(res_plotted, (center_x, center_y), 5, (0, 0, 255), -1)
+
+            highest = None
+
+            if len(r.boxes) > 0:
+                # Find the highest threshold box
+                for box in r.boxes:
+                    if highest is None or box.conf > highest.conf:
+                        highest = box
+
+            if highest is not None:
+                arr = highest.xywh.tolist()[0]
+                x = arr[0]
+                y = arr[1]
+                w = arr[2]
+                h = arr[3]
+                # print("x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
+                center_x = int(x)
+                center_y = int(y)
+                print("center_x: {}, center_y: {}".format(center_x, center_y))
+                cv2.circle(res_plotted, (center_x, center_y), 5, (0, 255, 0), -1)
+
+            # pyautogui.moveTo(center_x, center_y)
+            # pyautogui.click()
+            # time.sleep(0.1)
 
             # Display the picture
             cv2.imshow(get_first_word_before_space(window_title).encode("gbk").decode(errors="ignore"), res_plotted)
@@ -80,6 +108,16 @@ def get_first_word_before_space(text):
         return text
 
 
+def control_link():
+    # If in zelda window
+    active_window = gw.getActiveWindow()
+    if WINDOWS_TITLE in active_window:
+        # In zelda window
+        pyautogui.keyDown('w')
+        time.sleep(2)
+        pyautogui.keyUp('w')
+
+
 if __name__ == "__main__":
-    window_title = WINDOWS_TITLE
-    show_window(window_title)
+    show_window(WINDOWS_TITLE)
+    # control_link()
