@@ -2,10 +2,10 @@ import time
 import cv2
 import mss
 import numpy as np
+import pynput
 from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
 from colorama import Fore, Style
 from ultralytics import YOLO
-import pyautogui
 import pygetwindow as gw
 from queue import Queue
 from threading import Thread
@@ -23,6 +23,7 @@ center_x = 0
 center_y = 0
 
 model = YOLO(BEST_PATH)
+ctr = pynput.keyboard.Controller()
 
 
 def get_window_geometry(window_owner):
@@ -134,7 +135,7 @@ def control_link(in_q, out_x_q, out_y_q):
                     # Shoot
                     press_key('o')
 
-            time.sleep(ONCE_DURATION * 1.2)
+            time.sleep(ONCE_DURATION * 1.5)
 
 
 def move_to_center(out_x_q, out_y_q, x, y):
@@ -158,9 +159,10 @@ def press_key(key, duration=0.1):
 
     print(Fore.GREEN + "Pressing {} for {} seconds.".format(key, str(duration)) + Style.RESET_ALL)
 
-    pyautogui.keyDown(key)
+    ctr.press(key)
     time.sleep(duration)
-    pyautogui.keyUp(key)
+    ctr.release(key)
+    time.sleep(0.1)
 
 
 def press_x(in_q):
