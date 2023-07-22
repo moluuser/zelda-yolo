@@ -8,6 +8,11 @@ from ultralytics import YOLO
 WINDOWS_TITLE = "Ryujinx  1.1.0-macos1 - 塞尔达传说 王国之泪 v1.0.0 (0100F2C0115B6000) (64-bit)"
 BEST_PATH = "/Users/chenyang/Developer/PycharmProjects/zelda-yolo/detect/train/weights/best.pt"
 
+SIGHTING_Y_OFFSET = 30
+SIGHTING_IS_VISIBLE = True
+
+MODEL_THRESHOLD = 0.7
+
 model = YOLO(BEST_PATH)
 
 
@@ -46,8 +51,15 @@ def show_window(window_title):
             # BGRA to BGR
             img_brg = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-            res = model.predict(source=img_brg)
+            res = model.predict(source=img_brg, conf=MODEL_THRESHOLD)
+
             res_plotted = res[0].plot()
+
+            if SIGHTING_IS_VISIBLE:
+                image_height, image_width, _ = res_plotted.shape
+                center_x = image_width // 2
+                center_y = image_height // 2 + SIGHTING_Y_OFFSET
+                cv2.circle(res_plotted, (center_x, center_y), 5, (0, 0, 255), -1)
 
             # Display the picture
             cv2.imshow(get_first_word_before_space(window_title).encode("gbk").decode(errors="ignore"), res_plotted)
