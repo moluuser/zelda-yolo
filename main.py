@@ -9,7 +9,7 @@ import pyautogui
 import pygetwindow as gw
 
 WINDOWS_TITLE = "Ryujinx  1.1.0-macos1 - 塞尔达传说 王国之泪 v1.0.0 (0100F2C0115B6000) (64-bit)"
-BEST_PATH = "/Users/chenyang/Developer/PycharmProjects/zelda-yolo/detect/train/weights/best.pt"
+BEST_PATH = "./detect/train/weights/best.pt"
 
 SIGHTING_Y_OFFSET = 30
 SIGHTING_IS_VISIBLE = True
@@ -90,7 +90,9 @@ def show_window(window_title):
             # time.sleep(0.1)
 
             # Display the picture
-            cv2.imshow(get_first_word_before_space(window_title).encode("gbk").decode(errors="ignore"), res_plotted)
+            resized_img = resize_image(res_plotted, 0)
+            title = get_first_word_before_space(window_title).encode("gbk").decode(errors="ignore")
+            cv2.imshow(title, resized_img)
 
             # Press "q" to quit
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -106,6 +108,15 @@ def get_first_word_before_space(text):
         return words[0]
     else:
         return text
+
+
+def resize_image(img, target_width):
+    if target_width == 0:
+        return img
+    height, width = img.shape[:2]
+    target_height = int(target_width * height / width)
+    resized_img = cv2.resize(img, (target_width, target_height))
+    return resized_img
 
 
 def control_link():
