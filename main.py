@@ -16,7 +16,8 @@ SIGHTING_Y_OFFSET = 30
 SIGHTING_IS_VISIBLE = True
 MODEL_THRESHOLD = 0.7
 SHOOTING_THRESHOLD = 130
-PRESS_RATIO = 0.02
+PRESS_RATIO = 0.005
+ONCE_DURATION = 1
 
 center_x = 0
 center_y = 0
@@ -75,7 +76,7 @@ def show_window(window_title, out_q):
             highest = None
 
             if len(r.boxes) > 0:
-                # Run alay...
+                # Run away...
                 if len(r.boxes) > 3:
                     # TODO
                     pass
@@ -87,10 +88,7 @@ def show_window(window_title, out_q):
 
             if highest is not None:
                 arr = highest.xywh.tolist()[0]
-                x = arr[0]
-                y = arr[1]
-                w = arr[2]
-                h = arr[3]
+                x, y, w, h = arr[:4]
                 # print("x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
                 cv2.circle(res_plotted, (int(x), int(y)), 5, (0, 255, 0), -1)
 
@@ -132,10 +130,7 @@ def control_link(in_q, out_x_q, out_y_q):
         if WINDOWS_TITLE in active_window:
             # In zelda window
             arr = in_q.get()
-            x = int(arr[0])
-            y = int(arr[1])
-            w = int(arr[2])
-            h = int(arr[3])
+            x, y, w, h = arr[:4]
             # print("x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
 
             move_to_center(out_x_q, out_y_q, x, y)
@@ -147,11 +142,11 @@ def control_link(in_q, out_x_q, out_y_q):
                 # Shoot
                 press_key('o')
 
-            time.sleep(0.5)
+            time.sleep(ONCE_DURATION)
 
 
 def move_to_center(out_x_q, out_y_q, x, y):
-    print("x: {}, y: {}".format(abs(x - center_x), abs(y - center_y)))
+    # print("x_offset: {}, y_offset: {}".format(abs(x - center_x), abs(y - center_y)))
     if x < center_x:
         out_x_q.put(['a', abs(x - center_x) * PRESS_RATIO])
     elif x > center_x:
@@ -164,6 +159,11 @@ def move_to_center(out_x_q, out_y_q, x, y):
 
 
 def press_key(key, duration=0.1):
+    if duration < 0.1:
+        duration = 0.1
+    if duration > ONCE_DURATION:
+        duration = ONCE_DURATION
+
     pyautogui.keyDown(key)
     time.sleep(duration)
     pyautogui.keyUp(key)
@@ -190,8 +190,8 @@ if __name__ == "__main__":
     x_q = Queue()
     y_q = Queue()
 
-    thread_control = Thread(target=control_link, args=(q, x_q, y_q))
-    thread_control.start()
+    thread_control_link = Thread(target=control_link, args=(q, x_q, y_q))
+    thread_control_link.start()
 
     thread_press_x = Thread(target=press_x, args=(x_q,))
     thread_press_x.start()
