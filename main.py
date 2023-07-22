@@ -17,7 +17,9 @@ def get_window_geometry(window_title):
 
     print(Fore.GREEN + "Windows list:" + Style.RESET_ALL)
     for window_info in window_list:
-        print(window_info.get("kCGWindowName") + " - " + window_info.get("kCGWindowOwnerName"))
+        name = window_info.get("kCGWindowName")
+        owner_name = window_info.get("kCGWindowOwnerName")
+        print("{} - {})".format(name, owner_name))
         if window_info.get("kCGWindowName", "") == window_title:
             # Get the window size and position
             top = window_info["kCGWindowBounds"]["Y"]
