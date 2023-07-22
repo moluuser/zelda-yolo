@@ -6,4 +6,4 @@ function zeldaRestart() {
 
 export -f zeldaRestart
 
-find . -name "*.py" | entr -r bash -c "zeldaRestart"
+find . -name "*.py" -not -path "./venv/*" | entr -r bash -c "zeldaRestart"

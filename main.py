@@ -10,7 +10,7 @@ import pygetwindow as gw
 from queue import Queue
 from threading import Thread
 
-WINDOWS_TITLE = "Ryujinx  1.1.0-macos1 - 塞尔达传说 王国之泪 v1.0.0 (0100F2C0115B6000) (64-bit)"
+WINDOWS_OWNER = "Ryujinx"
 BEST_PATH = "./detect/train/weights/best.pt"
 SIGHTING_Y_OFFSET = 30
 SIGHTING_IS_VISIBLE = True
@@ -25,7 +25,7 @@ center_y = 0
 model = YOLO(BEST_PATH)
 
 
-def get_window_geometry(window_title):
+def get_window_geometry(window_owner):
     # Get all windows on the screen
     window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID)
 
@@ -34,7 +34,7 @@ def get_window_geometry(window_title):
         name = window_info.get("kCGWindowName")
         owner_name = window_info.get("kCGWindowOwnerName")
         print("{} - {})".format(name, owner_name))
-        if window_info.get("kCGWindowName", "") == window_title:
+        if owner_name == window_owner:
             # Get the window size and position
             top = window_info["kCGWindowBounds"]["Y"]
             left = window_info["kCGWindowBounds"]["X"]
@@ -45,11 +45,11 @@ def get_window_geometry(window_title):
     return None
 
 
-def show_window(window_title, out_q):
+def show_window(window_owner, out_q):
     # Find the window
-    window_geometry = get_window_geometry(window_title)
+    window_geometry = get_window_geometry(window_owner)
     if window_geometry is None:
-        print(Fore.RED + "Cannot find window with title '{}'.".format(window_title) + Style.RESET_ALL)
+        print(Fore.RED + "Cannot find window with owner '{}'.".format(window_owner) + Style.RESET_ALL)
         return
 
     with mss.mss() as sct:
@@ -96,8 +96,7 @@ def show_window(window_title, out_q):
 
             # Display the picture
             resized_img = resize_image(res_plotted, 0)
-            title = get_first_word_before_space(window_title).encode("gbk").decode(errors="ignore")
-            cv2.imshow(title, resized_img)
+            cv2.imshow(window_owner, resized_img)
 
             # Press "q" to quit
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -105,14 +104,6 @@ def show_window(window_title, out_q):
 
     # Close the window
     cv2.destroyAllWindows()
-
-
-def get_first_word_before_space(text):
-    words = text.split(' ')
-    if len(words) > 1:
-        return words[0]
-    else:
-        return text
 
 
 def resize_image(img, target_width):
@@ -127,7 +118,7 @@ def resize_image(img, target_width):
 def control_link(in_q, out_x_q, out_y_q):
     while True:
         active_window = gw.getActiveWindow()
-        if WINDOWS_TITLE in active_window:
+        if WINDOWS_OWNER in active_window:
             # In zelda window
             arr = in_q.get()
             x, y, w, h = arr[:4]
@@ -135,14 +126,15 @@ def control_link(in_q, out_x_q, out_y_q):
 
             move_to_center(out_x_q, out_y_q, x, y)
 
-            if w > SHOOTING_THRESHOLD or h > SHOOTING_THRESHOLD:
-                # Close-up attack
-                press_key('v')
-            elif abs(x - center_x) < 10 and abs(y - center_y) < 10:
-                # Shoot
-                press_key('o')
+            if abs(x - center_x) < 500 and abs(y - center_y) < 500:
+                if w > SHOOTING_THRESHOLD or h > SHOOTING_THRESHOLD:
+                    # Close-up attack
+                    press_key('v')
+                elif abs(x - center_x) < 10 and abs(y - center_y) < 10:
+                    # Shoot
+                    press_key('o')
 
-            time.sleep(ONCE_DURATION)
+            time.sleep(ONCE_DURATION * 1.2)
 
 
 def move_to_center(out_x_q, out_y_q, x, y):
@@ -163,6 +155,8 @@ def press_key(key, duration=0.1):
         duration = 0.1
     if duration > ONCE_DURATION:
         duration = ONCE_DURATION
+
+    print(Fore.GREEN + "Pressing {} for {} seconds.".format(key, str(duration)) + Style.RESET_ALL)
 
     pyautogui.keyDown(key)
     time.sleep(duration)
@@ -200,4 +194,4 @@ if __name__ == "__main__":
     thread_press_y.start()
 
     # Must call `cv2.imshow` in main thread
-    show_window(WINDOWS_TITLE, q)
+    show_window(WINDOWS_OWNER, q)
