@@ -93,7 +93,11 @@ def show_window(window_owner, out_q):
                 # print("x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
                 cv2.circle(res_plotted, (int(x), int(y)), 5, (0, 255, 0), -1)
 
+                if out_q.qsize() > 3:
+                    out_q.queue.clear()
+
                 out_q.put(arr)
+                print("Current move queue size: {}".format(out_q.qsize()))
 
             # Display the picture
             resized_img = resize_image(res_plotted, 0)
@@ -135,7 +139,7 @@ def control_link(in_q, out_key_q):
                     # Shoot
                     press_key('o')
 
-            time.sleep(ONCE_DURATION * 1.5)
+            time.sleep(ONCE_DURATION)
 
 
 def move_to_center_by_moving(out_key_q, x, y):
@@ -154,6 +158,7 @@ def move_to_center_by_moving(out_key_q, x, y):
     if len(key_list) > 0:
         max_offset = max(abs(x - center_x), abs(y - center_y))
         key_list.append(max_offset * PRESS_RATIO)
+
         # `key_list` will be like ['a', 'w', 5]
         out_key_q.put(key_list)
 
