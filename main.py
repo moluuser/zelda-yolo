@@ -156,9 +156,6 @@ def move_to_center_by_view(x, y):
     elif x > center_x:
         x_list.append('l')
     x_list.append(abs(x - center_x) * x_ratio)
-    ctr.press(x_list[0])
-    time.sleep(x_list[1])
-    ctr.release(x_list[0])
 
     y_list = []
     if y < center_y:
@@ -166,9 +163,8 @@ def move_to_center_by_view(x, y):
     elif y > center_y:
         y_list.append('k')
     y_list.append(abs(y - center_y) * y_ratio)
-    ctr.press(y_list[0])
-    time.sleep(y_list[1])
-    ctr.release(y_list[0])
+
+    press_key([x_list[0], y_list[0]], (x_list[1] + y_list[1]) / 2)
 
 
 def move_to_center_by_moving(out_key_q, x, y):
