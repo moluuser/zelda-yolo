@@ -97,7 +97,8 @@ def show_window(window_owner, out_q):
                 if out_q.qsize() > 3:
                     out_q.queue.clear()
 
-                out_q.put(arr)
+                if time.time() % 1 < 0.5:
+                    out_q.put(arr)
                 print("Current move queue size: {}".format(out_q.qsize()))
 
             # Display the picture
