@@ -14,10 +14,11 @@ WINDOWS_OWNER = "Ryujinx"
 BEST_PATH = "./detect/train/weights/best.pt"
 SIGHTING_Y_OFFSET = 30
 SIGHTING_IS_VISIBLE = True
-MODEL_THRESHOLD = 0.7
+MODEL_THRESHOLD = 0.6
 SHOOTING_THRESHOLD = 130
 PRESS_RATIO = 0.005
 ONCE_DURATION = 1
+ONLY_SHOOT = True
 
 center_x = 0
 center_y = 0
@@ -129,17 +130,44 @@ def control_link(in_q, out_key_q):
             x, y, w, h = arr[:4]
             # print("x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
 
-            move_to_center_by_moving(out_key_q, x, y)
+            # move_to_center_by_moving(out_key_q, x, y)
 
             if abs(x - center_x) < 500 and abs(y - center_y) < 500:
-                if w > SHOOTING_THRESHOLD or h > SHOOTING_THRESHOLD:
+                if not ONLY_SHOOT and (w > SHOOTING_THRESHOLD or h > SHOOTING_THRESHOLD):
                     # Close-up attack
                     press_key('v')
-                elif abs(x - center_x) < 10 and abs(y - center_y) < 10:
-                    # Shoot
-                    press_key('o')
+
+            if ONLY_SHOOT:
+                # Shoot
+                ctr.press('o')
+                move_to_center_by_view(x, y)
+                ctr.release('o')
 
             time.sleep(ONCE_DURATION)
+
+
+def move_to_center_by_view(x, y):
+    x_ratio = 0.0005
+    y_ratio = 0.001
+    x_list = []
+    if x < center_x:
+        x_list.append('j')
+    elif x > center_x:
+        x_list.append('l')
+    x_list.append(abs(x - center_x) * x_ratio)
+    ctr.press(x_list[0])
+    time.sleep(x_list[1])
+    ctr.release(x_list[0])
+
+    y_list = []
+    if y < center_y:
+        y_list.append('i')
+    elif y > center_y:
+        y_list.append('k')
+    y_list.append(abs(y - center_y) * y_ratio)
+    ctr.press(y_list[0])
+    time.sleep(y_list[1])
+    ctr.release(y_list[0])
 
 
 def move_to_center_by_moving(out_key_q, x, y):
@@ -172,10 +200,17 @@ def press_key(key, duration=0.1):
     print(Fore.GREEN + "Pressing {} for {} seconds.".format(key, str(duration)) + Style.RESET_ALL)
 
     for k in key:
+        if k == '':
+            continue
         ctr.press(k)
+
     time.sleep(duration)
+
     for k in key:
+        if k == '':
+            continue
         ctr.release(k)
+
     time.sleep(0.1)
 
 
