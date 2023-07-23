@@ -116,7 +116,7 @@ def resize_image(img, target_width):
     return resized_img
 
 
-def control_link(in_q, out_x_q, out_y_q):
+def control_link(in_q, out_key_q):
     while True:
         active_window = gw.getActiveWindow()
         if WINDOWS_OWNER in active_window:
@@ -125,7 +125,7 @@ def control_link(in_q, out_x_q, out_y_q):
             x, y, w, h = arr[:4]
             # print("x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
 
-            move_to_center(out_x_q, out_y_q, x, y)
+            move_to_center_by_moving(out_key_q, x, y)
 
             if abs(x - center_x) < 500 and abs(y - center_y) < 500:
                 if w > SHOOTING_THRESHOLD or h > SHOOTING_THRESHOLD:
@@ -138,17 +138,24 @@ def control_link(in_q, out_x_q, out_y_q):
             time.sleep(ONCE_DURATION * 1.5)
 
 
-def move_to_center(out_x_q, out_y_q, x, y):
+def move_to_center_by_moving(out_key_q, x, y):
     # print("x_offset: {}, y_offset: {}".format(abs(x - center_x), abs(y - center_y)))
+    key_list = []
     if x < center_x:
-        out_x_q.put(['a', abs(x - center_x) * PRESS_RATIO])
+        key_list.append('a')
     elif x > center_x:
-        out_x_q.put(['d', abs(x - center_x) * PRESS_RATIO])
+        key_list.append('d')
 
     if y < center_y:
-        out_y_q.put(['w', abs(y - center_y) * PRESS_RATIO])
+        key_list.append('w')
     elif y > center_y:
-        out_y_q.put(['s', abs(y - center_y) * PRESS_RATIO])
+        key_list.append('s')
+
+    if len(key_list) > 0:
+        max_offset = max(abs(x - center_x), abs(y - center_y))
+        key_list.append(max_offset * PRESS_RATIO)
+        # `key_list` will be like ['a', 'w', 5]
+        out_key_q.put(key_list)
 
 
 def press_key(key, duration=0.1):
@@ -159,41 +166,31 @@ def press_key(key, duration=0.1):
 
     print(Fore.GREEN + "Pressing {} for {} seconds.".format(key, str(duration)) + Style.RESET_ALL)
 
-    ctr.press(key)
+    for k in key:
+        ctr.press(k)
     time.sleep(duration)
-    ctr.release(key)
+    for k in key:
+        ctr.release(k)
     time.sleep(0.1)
 
 
-def press_x(in_q):
+def control_press_key(in_q):
     while True:
         arr = in_q.get()
-        key = arr[0]
-        duration = arr[1]
-        press_key(key, duration)
-
-
-def press_y(in_q):
-    while True:
-        arr = in_q.get()
-        key = arr[0]
-        duration = arr[1]
+        key = arr[:2]
+        duration = arr[2]
         press_key(key, duration)
 
 
 if __name__ == "__main__":
     q = Queue()
-    x_q = Queue()
-    y_q = Queue()
+    key_q = Queue()
 
-    thread_control_link = Thread(target=control_link, args=(q, x_q, y_q))
+    thread_control_link = Thread(target=control_link, args=(q, key_q))
     thread_control_link.start()
 
-    thread_press_x = Thread(target=press_x, args=(x_q,))
-    thread_press_x.start()
-
-    thread_press_y = Thread(target=press_y, args=(y_q,))
-    thread_press_y.start()
+    thread_control_press_key = Thread(target=control_press_key, args=(key_q,))
+    thread_control_press_key.start()
 
     # Must call `cv2.imshow` in main thread
     show_window(WINDOWS_OWNER, q)
