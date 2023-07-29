@@ -11,7 +11,7 @@ from queue import Queue
 from threading import Thread
 
 WINDOWS_OWNER = "Ryujinx"
-BEST_PATH = "./detect/train/weights/best.pt"
+BEST_PATH = "yolo/detect/train/weights/best.pt"
 SIGHTING_Y_OFFSET = 30
 SIGHTING_IS_VISIBLE = True
 MODEL_THRESHOLD = 0.6
