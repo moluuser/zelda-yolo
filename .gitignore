@@ -1,3 +1,5 @@
 .idea
 .DS_Store
 yolov8s.pt
+utils/__pycache__
+config/__pycache__
